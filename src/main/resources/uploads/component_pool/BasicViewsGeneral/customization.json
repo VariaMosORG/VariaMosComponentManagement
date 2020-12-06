@@ -1,0 +1,5 @@
+{ 
+   "CustomizationPoints": ["index-text", "index-headings", "footer", ""],
+   "PointBracketsLans": ["html", "html", "html", ""],
+   "IDs": ["BasicViewsGeneral-Index", "BasicViewsGeneral-Index", "BasicViewsGeneral-Footer", "BasicViewsGeneral-Banner"]
+}
