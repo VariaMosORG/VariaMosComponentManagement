@@ -14,12 +14,20 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -303,5 +311,63 @@ public class ComponentImplementation {
 		
 		return jsonString;
 	}
+	
+	@CrossOrigin 
+	@RequestMapping(value="/ComponentImplementation/getDerivedProduct", method=RequestMethod.POST, produces="application/zip")
+	@ResponseBody
+	public byte[] getDerivedProduct(HttpServletResponse response, @RequestBody String data_collected) {
+		String completedMessage="";
+		boolean some_files=false;
+		response.setStatus(HttpServletResponse.SC_OK);
+	    response.addHeader("Content-Disposition", "attachment; filename=\"productDerived.zip\"");
+		JsonParser parser = new JsonParser();
+		JsonObject rootObj = parser.parse(data_collected).getAsJsonObject();
+	    JsonElement p_derived = rootObj.get("p_derived");
+		resource_derived = new ClassPathResource(p_derived.getAsString());
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try {
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
+            ZipOutputStream zipOut = new ZipOutputStream(bufferedOutputStream);
+            File fileToZip = resource_derived.getFile();
+
+            zipFile(fileToZip, fileToZip.getName(), zipOut);
+            zipOut.close();
+
+            return byteArrayOutputStream.toByteArray();
+        }
+        catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+        return byteArrayOutputStream.toByteArray();
+	}
+	
+	private static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws IOException {
+        if (fileToZip.isHidden()) {
+            return;
+        }
+        if (fileToZip.isDirectory()) {
+            if (fileName.endsWith("/")) {
+                zipOut.putNextEntry(new ZipEntry(fileName));
+                zipOut.closeEntry();
+            } else {
+                zipOut.putNextEntry(new ZipEntry(fileName + "/"));
+                zipOut.closeEntry();
+            }
+            File[] children = fileToZip.listFiles();
+            for (File childFile : children) {
+                zipFile(childFile, fileName + "/" + childFile.getName(), zipOut);
+            }
+            return;
+        }
+        FileInputStream fis = new FileInputStream(fileToZip);
+        ZipEntry zipEntry = new ZipEntry(fileName);
+        zipOut.putNextEntry(zipEntry);
+        byte[] bytes = new byte[1024];
+        int length;
+        while ((length = fis.read(bytes)) >= 0) {
+            zipOut.write(bytes, 0, length);
+        }
+        fis.close();
+    }
 	
 }
