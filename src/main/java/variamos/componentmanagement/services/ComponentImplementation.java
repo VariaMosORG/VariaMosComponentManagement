@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -20,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -254,16 +256,10 @@ public class ComponentImplementation {
 		String file_code="";
 
 		JsonElement p_pool = rootObj.get("p_pool");
-		resource_pool= new ClassPathResource(p_pool.getAsString());
-        try {
-    		File component_p = resource_pool.getFile();
-            File the_file = new File(component_p+"/"+component+"/"+filename);
-            if(the_file.exists()){
-                file_code = FileUtilsApache.readFileToString(the_file, "utf-8");
-            }else {
-            	file_code = "File not found";
-            }
-
+		try {
+			resource_pool = new ClassPathResource(p_pool.getAsString()+"/"+component+"/"+filename);
+			byte[] bdata = FileCopyUtils.copyToByteArray(resource_pool.getInputStream());
+			file_code = new String(bdata, StandardCharsets.UTF_8);
         }
         catch(Exception e){
             System.out.println(e.getMessage());
