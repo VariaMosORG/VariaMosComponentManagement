@@ -1,5 +1,6 @@
 package variamos.componentmanagement.services;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -42,13 +44,54 @@ import variamos.componentmanagement.modules.fragop.Fragmental;
 import variamos.componentmanagement.modules.util.FileUtilsApache;
 import variamos.componentmanagement.modules.lexermain.MainParser;
 
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+
 @RestController
 @EnableAutoConfiguration
 public class ComponentImplementation {
 	
-	public static Resource resource_derived = new ClassPathResource("/uploads/component_derived/");
+	public static ClassPathResource resource_derived = new ClassPathResource("/uploads/component_derived/");
 	public static ClassPathResource resource_pool = new ClassPathResource("/uploads/component_pool/");
 	public String s_derived;
+	public static String pool_folder = "component_pool/";
+	
+	@CrossOrigin
+	@RequestMapping(value="/ComponentImplementation/uploadpool", consumes = {"multipart/form-data"}, method=RequestMethod.POST)
+	@ResponseBody
+    public String uploadComponentPool(@RequestParam("pool") String pool, @RequestPart("file") MultipartFile file) throws Exception{
+		String message = "";
+		pool_folder = pool;
+		File source_f = new File(pool_folder);
+        if (!file.isEmpty()) {
+            try {
+            	try{
+                    FileUtilsApache.deleteDirectory(source_f);
+                    File zip = File.createTempFile(UUID.randomUUID().toString(), "temp");
+                    try {
+                        FileOutputStream o = new FileOutputStream(zip);
+                        IOUtils.copy(file.getInputStream(), o);
+                        o.close();
+            		    ZipFile zipFile = new ZipFile(zip);
+            		    zipFile.extractAll(pool_folder);
+            		} catch (Exception e) {
+            			message += e.getMessage();
+            		} finally {
+            	        zip.delete();
+            	    }
+                }
+                catch(Exception e){
+                	message += e.getMessage();
+                }
+            	message += "uploaded";
+            } catch (Exception e) {
+            	message += "error" + e.getMessage();
+            }
+        } else {
+        	message += "error";
+        }
+        return message;
+    }
 	
 	@CrossOrigin
 	@RequestMapping(value="/ComponentImplementation/execute", method=RequestMethod.POST, produces="text/plain")
@@ -254,12 +297,15 @@ public class ComponentImplementation {
 		JsonElement data3 = rootObj2.get("component");
 		String component = data3.getAsString();
 		String file_code="";
-
 		JsonElement p_pool = rootObj.get("p_pool");
-		try {
-			resource_pool = new ClassPathResource(p_pool.getAsString()+"/"+component+"/"+filename);
-			byte[] bdata = FileCopyUtils.copyToByteArray(resource_pool.getInputStream());
-			file_code = new String(bdata, StandardCharsets.UTF_8);
+		pool_folder = p_pool.getAsString();
+        try {
+            File the_file = new File(pool_folder+"/"+component+"/"+filename);
+            if(the_file.exists()){
+                file_code = FileUtilsApache.readFileToString(the_file, "utf-8");
+            }else {
+            	file_code = "File not found";
+            }
         }
         catch(Exception e){
             System.out.println(e.getMessage());
