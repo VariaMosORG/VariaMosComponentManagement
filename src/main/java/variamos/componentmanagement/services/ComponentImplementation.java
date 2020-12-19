@@ -47,7 +47,7 @@ import variamos.componentmanagement.modules.lexermain.MainParser;
 public class ComponentImplementation {
 	
 	public static Resource resource_derived = new ClassPathResource("/uploads/component_derived/");
-	public static Resource resource_pool = new ClassPathResource("/uploads/component_pool/");
+	public static ClassPathResource resource_pool = new ClassPathResource("/uploads/component_pool/");
 	public String s_derived;
 	
 	@CrossOrigin
