@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.util.FileCopyUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,7 +19,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +30,6 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -45,16 +40,14 @@ import variamos.componentmanagement.modules.util.FileUtilsApache;
 import variamos.componentmanagement.modules.lexermain.MainParser;
 
 import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 
 @RestController
 @EnableAutoConfiguration
 public class ComponentImplementation {
 	
-	public static ClassPathResource resource_derived = new ClassPathResource("/uploads/component_derived/");
-	public static ClassPathResource resource_pool = new ClassPathResource("/uploads/component_pool/");
 	public String s_derived;
 	public static String pool_folder = "component_pool/";
+	public static String derived_folder = "component_derived/";
 	
 	@CrossOrigin
 	@RequestMapping(value="/ComponentImplementation/uploadpool", consumes = {"multipart/form-data"}, method=RequestMethod.POST)
@@ -105,9 +98,9 @@ public class ComponentImplementation {
 	    String data_string = data.getAsString();
 	    
 		JsonElement p_pool = rootObj.get("p_pool");
-		resource_pool= new ClassPathResource(p_pool.getAsString());
+		pool_folder = p_pool.getAsString();
 		JsonElement p_derived = rootObj.get("p_derived");
-		resource_derived= new ClassPathResource(p_derived.getAsString());
+		derived_folder = p_derived.getAsString();
 		s_derived = p_derived.getAsString();
 	    
 	    JsonArray rootArray = parser.parse(data_string).getAsJsonArray();
@@ -129,26 +122,19 @@ public class ComponentImplementation {
 	    }
 	    
 	    if(some_files) {
-	    	if(resource_derived.exists()) {
-				try {
-					Fragmental.principal(files,resource_derived.getFile(),resource_pool.getFile());
-					String found_errors=Fragmental.get_errors();
-					if(found_errors.equals("")) {
-						completedMessage=found_errors+"!!!Components successfully assembled!!!";
-			        }else {
-			        	completedMessage=found_errors+"!!!Components assembled with multiple errors!!!";
-			        }
-				}catch(Exception e){
-	                System.out.println(e.getMessage());
-	            }
-			}else {
-				/*try {
-					System.out.println(s_derived);
-					new File(s_derived).mkdirs();
-				}catch(Exception e){
-	                System.out.println(e.getMessage());
-	            }*/
-			}
+	    	File resource_derived = new File(derived_folder);
+	    	File resource_pool = new File(pool_folder);
+			try {
+				Fragmental.principal(files,resource_derived,resource_pool);
+				String found_errors=Fragmental.get_errors();
+				if(found_errors.equals("")) {
+					completedMessage=found_errors+"!!!Components successfully assembled!!!";
+		        }else {
+		        	completedMessage=found_errors+"!!!Components assembled with multiple errors!!!";
+		        }
+			}catch(Exception e){
+                System.out.println(e.getMessage());
+            }
 	    }else {
 	    	completedMessage="No components to assemble";
 	    }
@@ -169,7 +155,8 @@ public class ComponentImplementation {
 	    JsonArray rootArray = parser.parse(data_string).getAsJsonArray();
 	    
 		JsonElement p_derived = rootObj.get("p_derived");
-		resource_derived= new ClassPathResource(p_derived.getAsString());
+		derived_folder = p_derived.getAsString();
+		File resource_derived = new File(derived_folder);
 	    
 	    ArrayList<String> destinations = new ArrayList();
 	    for (int i = 0; i < rootArray.size(); i++) {
@@ -180,7 +167,7 @@ public class ComponentImplementation {
 	    if(some_files) {
 	    	if(resource_derived.exists()) {
 				try {
-					completedMessage=MainParser.executeParser(resource_derived.getFile(), destinations);
+					completedMessage=MainParser.executeParser(resource_derived, destinations);
 				}catch(Exception e){
 	                System.out.println(e.getMessage());
 	            }
@@ -195,8 +182,9 @@ public class ComponentImplementation {
 	@RequestMapping(value="/ComponentImplementation/uploadfile", consumes = {"multipart/form-data"}, method=RequestMethod.POST)
 	@ResponseBody
     public String uploadFile(@RequestParam("dest") String dest, @RequestParam("p_derived") String p_derived, @RequestPart("file") MultipartFile file) throws Exception{
-		resource_derived= new ClassPathResource(p_derived);
-        File derivation = resource_derived.getFile();
+		derived_folder = p_derived;
+		File resource_derived = new File(derived_folder);
+        File derivation = resource_derived;
         if (!file.isEmpty()) {
             try {
             	File convFile = new File(derivation+"/"+dest);
@@ -222,11 +210,13 @@ public class ComponentImplementation {
 		JsonObject rootObj = parser.parse(data_collected).getAsJsonObject();
 		
 		JsonElement p_pool = rootObj.get("p_pool");
-		resource_pool= new ClassPathResource(p_pool.getAsString());
+		pool_folder = p_pool.getAsString();
+		File resource_pool = new File(pool_folder);
 		JsonElement p_derived = rootObj.get("p_derived");
-		resource_derived= new ClassPathResource(p_derived.getAsString());
+		derived_folder = p_derived.getAsString();
+		File resource_derived = new File(derived_folder);
 		try {
-			Fragmental.assembled_folder=resource_derived.getFile();
+			Fragmental.assembled_folder = resource_derived;
 		}
 		catch(Exception e){
             System.out.println(e.getMessage());
@@ -243,7 +233,7 @@ public class ComponentImplementation {
 		    	component=rootArray.get(i).getAsString();
 		    	if(resource_pool.exists()) {
 					try {
-						data_row = Fragmental.check_folder(component,resource_pool.getFile());
+						data_row = Fragmental.check_folder(component, resource_pool);
 						data_to_return.add(data_row);
 					}
 					catch(Exception e){
@@ -285,8 +275,6 @@ public class ComponentImplementation {
 	@RequestMapping(value="/ComponentImplementation/getFile", method=RequestMethod.POST, produces="text/plain")
 	@ResponseBody
 	public String getFile(@RequestBody String data_collected) {
-		String completedMessage="";
-		boolean some_files=false;
 		JsonParser parser = new JsonParser();
 		JsonObject rootObj = parser.parse(data_collected).getAsJsonObject();
 		JsonElement data = rootObj.get("data");
@@ -314,6 +302,7 @@ public class ComponentImplementation {
 		return file_code;
 	}
 	
+	/*
 	@CrossOrigin 
 	@RequestMapping(value="/ComponentImplementation/getDirectoryInfo", method=RequestMethod.POST, produces="text/plain")
 	@ResponseBody
@@ -352,25 +341,25 @@ public class ComponentImplementation {
         String jsonString = gson.toJson(json_directory);
 		
 		return jsonString;
-	}
+	}*/
+	
 	
 	@CrossOrigin 
 	@RequestMapping(value="/ComponentImplementation/getDerivedProduct", method=RequestMethod.POST, produces="application/zip")
 	@ResponseBody
 	public byte[] getDerivedProduct(HttpServletResponse response, @RequestBody String data_collected) {
-		String completedMessage="";
-		boolean some_files=false;
 		response.setStatus(HttpServletResponse.SC_OK);
 	    response.addHeader("Content-Disposition", "attachment; filename=\"productDerived.zip\"");
 		JsonParser parser = new JsonParser();
 		JsonObject rootObj = parser.parse(data_collected).getAsJsonObject();
 	    JsonElement p_derived = rootObj.get("p_derived");
-		resource_derived = new ClassPathResource(p_derived.getAsString());
+	    derived_folder = p_derived.getAsString();
+	    File resource_derived = new File(derived_folder);
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try {
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(byteArrayOutputStream);
             ZipOutputStream zipOut = new ZipOutputStream(bufferedOutputStream);
-            File fileToZip = resource_derived.getFile();
+            File fileToZip = resource_derived;
 
             zipFile(fileToZip, fileToZip.getName(), zipOut);
             zipOut.close();
@@ -382,6 +371,7 @@ public class ComponentImplementation {
         }
         return byteArrayOutputStream.toByteArray();
 	}
+	
 	
 	private static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws IOException {
         if (fileToZip.isHidden()) {
@@ -411,5 +401,4 @@ public class ComponentImplementation {
         }
         fis.close();
     }
-	
 }

@@ -126,8 +126,6 @@ public class Fragmental {
             catch(Exception e){
                 System.out.println(e.getMessage());
             }
-        }else {
-        	System.out.println("Invalid derived folder path");
         }
     }
     
