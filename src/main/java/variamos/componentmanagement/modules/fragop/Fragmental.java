@@ -240,4 +240,23 @@ public class Fragmental {
         }
     }
     
+    public static void clean_comments(ArrayList<String> fileList, File assembled){
+    	error_var = new ArrayList();
+    	assembled_folder = assembled;
+    	for (int i=0;i<fileList.size();i++) {
+	        File source_f = new File(assembled_folder+"/"+fileList.get(i));
+	        if(source_f.exists()){
+	            try{
+	                String f_content = FileUtilsApache.readFileToString(source_f, "utf-8");
+	                String regexExpression = "(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)";
+	                String cleanedContent = f_content.replaceAll(regexExpression, "");
+	                FileUtilsApache.writeStringToFile(source_f, cleanedContent, "utf-8");
+	            }
+	            catch(Exception e){
+	            	error_var.add(e.getMessage()+e.getStackTrace());
+	            }
+	        }
+    	}
+    }
+    
 }

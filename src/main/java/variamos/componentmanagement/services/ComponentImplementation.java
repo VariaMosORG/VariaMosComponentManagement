@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +201,27 @@ public class ComponentImplementation {
             return "error";
         }
 
+    }
+	
+	@CrossOrigin
+	@RequestMapping(value="/ComponentImplementation/cleanComments", method=RequestMethod.POST, produces="text/plain")
+	@ResponseBody
+    public String cleanComments(@RequestBody String data_collected){
+		JsonParser parser = new JsonParser();
+		JsonObject rootObj = parser.parse(data_collected).getAsJsonObject();
+		JsonElement data = rootObj.get("data");
+	    String data_string = data.getAsString();
+	    JsonElement p_derived = rootObj.get("p_derived");
+		derived_folder = p_derived.getAsString();
+		File resource_derived = new File(derived_folder);
+	    ArrayList<String> fileList = new ArrayList<>(Arrays.asList(data_string.split(",")));
+	    Fragmental.clean_comments(fileList, resource_derived);
+	    String found_errors=Fragmental.get_errors();
+		if(found_errors.equals("")) {
+			return "Files Cleaned";
+        }else {
+        	return found_errors+" - Cleaned with errors";
+        }
     }
 	
 	@CrossOrigin
