@@ -245,6 +245,7 @@ public class ComponentImplementation {
         }
 		JsonElement data = rootObj.get("data");
 	    String data_string = data.getAsString();
+	    
 	    JsonArray rootArray = parser.parse(data_string).getAsJsonArray();
 	    ArrayList<String> data_row = new ArrayList<String>();
 	    ArrayList<ArrayList<String>> data_to_return = new ArrayList<ArrayList<String>>();

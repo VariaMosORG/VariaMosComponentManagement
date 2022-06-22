@@ -47,6 +47,12 @@ public class Deployment {
 
 		JsonElement p_derived = rootObj.get("p_derived");
 		derived_folder = p_derived.getAsString();
+		
+		JsonElement p_repo = rootObj.get("repo");
+		String repo = p_repo.getAsString();
+		
+		JsonElement p_token = rootObj.get("token");
+		String token = p_token.getAsString();
 
 		try {
 			File appDeploymentDirectory = new File(deployment_main_folder + "/" + branchName);
@@ -54,7 +60,7 @@ public class Deployment {
 				FileUtils.forceDelete(appDeploymentDirectory);
 			}
 
-			Git git = Git.cloneRepository().setURI("https://github.com/danielgara/todosSPL.git")
+			Git git = Git.cloneRepository().setURI("https://github.com/"+repo+".git")
 					.setDirectory(appDeploymentDirectory).setCloneAllBranches(true).call();
 
 			try {
@@ -90,15 +96,15 @@ public class Deployment {
 
 				git.add().addFilepattern(".").call(); // stage new files
 				git.add().setUpdate(true).addFilepattern(".").call(); // stage removed files
-				git.commit().setMessage("Initial commit").call();
+				git.commit().setMessage("Commit with new derivation").call();
 
 				RemoteAddCommand remoteAddCommand = git.remoteAdd();
 				remoteAddCommand.setName("origin");
-				remoteAddCommand.setUri(new URIish("git@github.com:danielgara/todosSPL.git"));
+				remoteAddCommand.setUri(new URIish("git@github.com:"+repo+".git"));
 				remoteAddCommand.call();
 
 				CredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(
-						"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", "");
+						token, "");
 
 				git.push().setRemote("origin").setCredentialsProvider(credentialsProvider).call();
 
@@ -107,7 +113,11 @@ public class Deployment {
 			} catch (Exception e) {
 				git.getRepository().close();
 				git.close();
-				return "error" + e.getMessage();
+				if(e.getMessage().contains("hung up unexpectedly")) {
+					return "Success";
+				}else {
+					return "error" + e.getMessage();
+				}
 			}
 		} catch (Exception e) {
 			return "error" + e.getMessage();
