@@ -19,7 +19,7 @@ Alternative, you can run this application with Docker, by following the next ste
 
 1. Install Docker (info [here](https://docs.docker.com/get-docker/)).
 2. Run the next command:
-`sudo docker run -d -p 8081:8081 --name variamos-cm danielgara/variamoscomponentmanagement`
+`sudo docker run -d -p 8081:8081 --name variamos-cm danielgara/variamoscomponentdeployment`
 3. Open the application in the port 8081.
 
 ## Functionalities
