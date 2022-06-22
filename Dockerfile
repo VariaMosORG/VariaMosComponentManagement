@@ -5,7 +5,7 @@ COPY src /build/src/
 WORKDIR /build/
 RUN mvn package
 
-FROM openjdk:8-jre-alpine
+FROM openjdk:11-jre-alpine
 WORKDIR /app
 COPY --from=MAVEN_BUILD /build/target/VariaMosServices.jar /app/
 ENTRYPOINT ["java", "-jar", "VariaMosServices.jar"]
