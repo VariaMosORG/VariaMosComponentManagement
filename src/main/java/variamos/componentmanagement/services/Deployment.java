@@ -44,6 +44,7 @@ public class Deployment {
 		JsonObject rootObj = parser.parse(data_collected).getAsJsonObject();
 		JsonElement apps = rootObj.get("apps");
 		String branchName = apps.getAsString();
+		String branchRepo = "main";
 
 		JsonElement p_derived = rootObj.get("p_derived");
 		derived_folder = p_derived.getAsString();
@@ -68,17 +69,16 @@ public class Deployment {
 				List<Ref> call = git.branchList().setListMode(ListMode.ALL).call();
 				for (Ref ref : call) {
 					String currentBranch = ref.getName().substring(ref.getName().lastIndexOf('/') + 1);
-					if (currentBranch.equals(branchName)) {
+					if (currentBranch.equals(branchRepo)) {
 						existingBranch = true;
 					}
 				}
 
 				if (existingBranch) {
-					git.checkout().setName(branchName).setCreateBranch(true)
-						.setStartPoint("origin/" + branchName).call();
+					git.checkout().setName(branchRepo).setStartPoint("origin/" + branchRepo).call();
 				} else {
-					git.branchCreate().setForce(true).setName(branchName).call();
-					git.checkout().setName(branchName).call();
+					git.branchCreate().setForce(true).setName(branchRepo).call();
+					git.checkout().setName(branchRepo).call();
 				}
 
 				File appDeploymentDirectoryUpdated = new File(deployment_main_folder + "/" + branchName);
